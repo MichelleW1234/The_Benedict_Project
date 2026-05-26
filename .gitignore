@@ -5,7 +5,12 @@
 # Recommended: add any editor/OS/tool-specific ignore rules from the Global/ templates as needed.
 # See: https://github.com/github/gitignore/tree/main/Global
 #
+# Local environment files can contain API keys and other secrets.
 .env
+.env.*
+!.env.example
+!.env.sample
+!.env.template
 
 .utmp/
 /[Ll]ibrary/
