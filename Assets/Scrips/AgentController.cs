@@ -21,4 +21,38 @@ public class AgentController : MonoBehaviour
         animator.SetTrigger("Excited");
     }
 
+    void PlayHappyGesture() {
+        animator.SetTrigger("Happy");
+    }
+
+    void PlaySadGesture() {
+        animator.SetTrigger("Sad");
+    }
+
+    void PlayClappingGesture() {
+        animator.SetTrigger("Clapping");
+    }
+
+    void PlayHipHopDanceGesture() {
+        animator.SetTrigger("Hip_hop_dancing");
+    }
+
+    void StartArgueGesture() {
+        animator.SetBool("Argue", true);
+    }
+
+    void StopArgueGesture() {
+        animator.SetBool("Argue", false);
+    }
+
+    void StartTalkingOnPhoneGesture() {
+        animator.SetBool("Talking_on_phone", true);
+    }
+
+    void StopTalkingOnPhoneGesture() {
+        animator.SetBool("Talking_on_phone", false);
+    }
+
+
+
 }
