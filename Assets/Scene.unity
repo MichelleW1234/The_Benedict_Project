@@ -1451,7 +1451,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3126792323579541066, guid: ce3b2cab8ea1ed046ba4f3a8e5e0cef2, type: 3}
       propertyPath: m_LocalPosition.y
-      value: -1.28
+      value: -0.08
       objectReference: {fileID: 0}
     - target: {fileID: 3126792323579541066, guid: ce3b2cab8ea1ed046ba4f3a8e5e0cef2, type: 3}
       propertyPath: m_LocalPosition.z
@@ -1510,8 +1510,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 03bda7996855c314e937218a48a3dfd0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  animator: {fileID: 0}
+  animator: {fileID: 6903254847961840681}
   sampleRadius: 1
+--- !u!95 &6903254847961840681 stripped
+Animator:
+  m_CorrespondingSourceObject: {fileID: 9044553898502499376, guid: ce3b2cab8ea1ed046ba4f3a8e5e0cef2, type: 3}
+  m_PrefabInstance: {fileID: 6903254847961840678}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
