@@ -41,7 +41,6 @@ public class AgentController : MonoBehaviour
         animator.SetBool("Argue", true);
     }
 
-
     void StartTalkingOnPhoneGesture() {
         animator.SetBool("Talking_on_phone", true);
     }
