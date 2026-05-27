@@ -8,13 +8,15 @@ public class AgentController : MonoBehaviour
 
     void Start()
     {
-
+        if (animator != null) {
+            // call gesture functions here for testing
+            StartArgueGesture();
+            PlayHappyGesture();
+        }
     }
     void Update()
     {
-        if (animator != null) {
-            // call gesture functions here for testing
-        }
+        
     }
 
     void PlayExcitedGesture() {
