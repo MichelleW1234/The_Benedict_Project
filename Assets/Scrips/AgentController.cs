@@ -10,8 +10,6 @@ public class AgentController : MonoBehaviour
     {
         if (animator != null) {
             // call gesture functions here for testing
-            StartArgueGesture();
-            PlayHappyGesture();
         }
     }
     void Update()
@@ -43,18 +41,10 @@ public class AgentController : MonoBehaviour
         animator.SetBool("Argue", true);
     }
 
-    void StopArgueGesture() {
-        animator.SetBool("Argue", false);
-    }
 
     void StartTalkingOnPhoneGesture() {
         animator.SetBool("Talking_on_phone", true);
     }
-
-    void StopTalkingOnPhoneGesture() {
-        animator.SetBool("Talking_on_phone", false);
-    }
-
 
 
 }
