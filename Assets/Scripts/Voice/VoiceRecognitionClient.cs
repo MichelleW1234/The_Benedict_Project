@@ -1,7 +1,8 @@
 using System;
 using System.Collections;
+using System.Collections.Concurrent;
 using System.Text;
-using NativeWebSocket;
+using Meta.Net.NativeWebSocket;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -29,6 +30,7 @@ public sealed class VoiceRecognitionClient : MonoBehaviour
     private Coroutine streamCoroutine;
     private int lastSamplePosition;
     private bool microphoneStreaming;
+    private readonly ConcurrentQueue<byte[]> pendingMessages = new ConcurrentQueue<byte[]>();
 
     public bool IsConnected => websocket != null && websocket.State == WebSocketState.Open;
     public bool IsMicrophoneStreaming => microphoneStreaming;
@@ -43,9 +45,10 @@ public sealed class VoiceRecognitionClient : MonoBehaviour
 
     private void Update()
     {
-#if !UNITY_WEBGL || UNITY_EDITOR
-        websocket?.DispatchMessageQueue();
-#endif
+        while (pendingMessages.TryDequeue(out byte[] bytes))
+        {
+            HandleMessage(bytes);
+        }
     }
 
     private async void OnApplicationQuit()
@@ -62,7 +65,7 @@ public sealed class VoiceRecognitionClient : MonoBehaviour
 
         websocket = new WebSocket(websocketUrl);
         websocket.OnOpen += HandleOpen;
-        websocket.OnMessage += HandleMessage;
+        websocket.OnMessage += EnqueueMessage;
         websocket.OnError += error => PublishStatus("WebSocket error: " + error);
         websocket.OnClose += code => PublishStatus("WebSocket closed: " + code);
 
@@ -138,6 +141,13 @@ public sealed class VoiceRecognitionClient : MonoBehaviour
         {
             StartMicrophoneStream();
         }
+    }
+
+    private void EnqueueMessage(byte[] bytes, int offset, int length)
+    {
+        byte[] message = new byte[length];
+        Array.Copy(bytes, offset, message, 0, length);
+        pendingMessages.Enqueue(message);
     }
 
     private void HandleMessage(byte[] bytes)
