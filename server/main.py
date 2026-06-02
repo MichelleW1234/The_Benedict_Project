@@ -1,5 +1,6 @@
 import asyncio
 import base64
+import json
 import os
 from pathlib import Path
 from typing import Any
@@ -44,6 +45,23 @@ class GeminiResponse(BaseModel):
     text: str
 
 
+class IntentRequest(BaseModel):
+    transcript: str = Field(min_length=1)
+
+
+class IntentResponse(BaseModel):
+    intent: str
+
+
+VALID_INTENTS = {
+    "open_inventory",
+    "close_inventory",
+    "start",
+    "stop",
+    "unknown",
+}
+
+
 def require_genai_client() -> Any:
     if genai is None or types is None:
         raise RuntimeError("Missing dependency: install google-genai from server/requirements.txt.")
@@ -71,6 +89,29 @@ async def generate_text(request: GeminiRequest) -> GeminiResponse:
         contents=request.prompt.strip(),
     )
     return GeminiResponse(text=response.text or "")
+
+
+@app.post("/api/intent", response_model=IntentResponse)
+async def classify_intent(request: IntentRequest) -> IntentResponse:
+    client = require_genai_client()
+    transcript = request.transcript.strip()
+    prompt = (
+        "Classify this Unity voice command into exactly one intent.\n"
+        "Allowed intents: open_inventory, close_inventory, start, stop, unknown.\n"
+        "Use open_inventory for requests to open, show, view, or inspect inventory/items.\n"
+        "Use close_inventory for requests to close, hide, dismiss, or exit inventory/items.\n"
+        "Use start for requests to begin, go, continue, run, or proceed.\n"
+        "Use stop for requests to stop, pause, wait, halt, or cancel movement/action.\n"
+        "Use unknown if the transcript is not clearly one of those commands.\n"
+        "Return only the intent label, with no explanation.\n\n"
+        f"Transcript: {transcript}"
+    )
+    response = client.models.generate_content(
+        model=GEMINI_MODEL,
+        contents=prompt,
+    )
+    intent = _normalize_intent(response.text or "")
+    return IntentResponse(intent=intent)
 
 
 @app.websocket("/ws/live")
@@ -223,6 +264,25 @@ def _decode_audio(message: dict[str, Any]) -> bytes:
     if not isinstance(raw_data, str) or not raw_data:
         raise ValueError("Audio messages must include base64 audio in the data field.")
     return base64.b64decode(raw_data)
+
+
+def _normalize_intent(raw_intent: str) -> str:
+    intent = raw_intent.strip().lower()
+    try:
+        parsed = json.loads(intent)
+        if isinstance(parsed, dict):
+            intent = str(parsed.get("intent", "")).strip().lower()
+        elif isinstance(parsed, str):
+            intent = parsed.strip().lower()
+    except json.JSONDecodeError:
+        pass
+    intent = intent.strip("`'\". \n\t")
+    if ":" in intent:
+        intent = intent.rsplit(":", 1)[-1].strip()
+    intent = intent.strip("{}[]`'\". \n\t")
+    if intent in VALID_INTENTS:
+        return intent
+    return "unknown"
 
 
 async def _safe_send_json(websocket: WebSocket, message: dict[str, Any]) -> None:
