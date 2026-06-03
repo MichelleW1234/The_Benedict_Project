@@ -1,8 +1,8 @@
 using UnityEngine;
-using UnityEngine.InputSystem;
 using Oculus.Interaction;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
+using UnityEngine.XR;
 
 public class RayIndicator : MonoBehaviour
 {
@@ -14,6 +14,8 @@ public class RayIndicator : MonoBehaviour
 
     public Ray ray;
     public Vector3 endPoint;
+    // track previous state for right-hand trigger edge detection
+    private bool prevRightTrigger = false;
     
     void Update()
     {
@@ -36,36 +38,20 @@ public class RayIndicator : MonoBehaviour
         line.SetPosition(1, endPoint);
 
 
-        // Detect primary click (supports new Input System mouse, keyboard/gamepad Up, and legacy input)
+        // Controller-only: use right-hand XR controller trigger (Meta/Oculus)
         bool clicked = false;
-
-        // New Input System: mouse
-        if (UnityEngine.InputSystem.Mouse.current != null && UnityEngine.InputSystem.Mouse.current.leftButton.wasPressedThisFrame)
+        InputDevice rightHand = InputDevices.GetDeviceAtXRNode(XRNode.RightHand);
+        bool rightTriggerPressed = false;
+        if (rightHand.isValid && rightHand.TryGetFeatureValue(CommonUsages.triggerButton, out rightTriggerPressed))
         {
-            clicked = true;
-        }
-
-        // New Input System: keyboard Up arrow
-        if (!clicked)
-        {
-            var kb = UnityEngine.InputSystem.Keyboard.current;
-            if (kb != null && kb.upArrowKey.wasPressedThisFrame)
+            // edge-detect: only trigger on press down this frame
+            if (rightTriggerPressed && !prevRightTrigger)
+            {
                 clicked = true;
+            }
         }
-
-        // New Input System: gamepad dpad Up
-        if (!clicked)
-        {
-            var gp = UnityEngine.InputSystem.Gamepad.current;
-            if (gp != null && gp.dpad.up.wasPressedThisFrame)
-                clicked = true;
-        }
-
-        // Legacy input fallback: mouse left or UpArrow key
-        if (!clicked)
-        {
-            clicked = Input.GetMouseButtonDown(0) || Input.GetKeyDown(KeyCode.UpArrow);
-        }
+        // update previous state for next frame
+        prevRightTrigger = rightTriggerPressed;
 
         if (clicked)
         {
