@@ -1779,6 +1779,7 @@ MonoBehaviour:
   agentPrefabs:
   - {fileID: 2319153292712619248, guid: ce3b2cab8ea1ed046ba4f3a8e5e0cef2, type: 3}
   - {fileID: 403340707864983233, guid: aeb85d0520ceaea4b82a60156d574000, type: 3}
+  - {fileID: 849095232842986056, guid: f6512ff3e161d41e180facd7365368a4, type: 3}
 --- !u!4 &824374416
 Transform:
   m_ObjectHideFlags: 0

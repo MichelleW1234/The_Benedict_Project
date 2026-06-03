@@ -81,5 +81,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 03bda7996855c314e937218a48a3dfd0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  animator: {fileID: 0}
+  animator: {fileID: 6224937743560536712}
   sampleRadius: 1
+--- !u!95 &6224937743560536712 stripped
+Animator:
+  m_CorrespondingSourceObject: {fileID: 5866666021909216657, guid: 27615aba94a0a40308473c7154b05d87, type: 3}
+  m_PrefabInstance: {fileID: 507216037341056793}
+  m_PrefabAsset: {fileID: 0}

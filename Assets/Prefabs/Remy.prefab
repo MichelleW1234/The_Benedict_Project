@@ -64,8 +64,39 @@ PrefabInstance:
       propertyPath: m_Name
       value: Remy
       objectReference: {fileID: 0}
+    - target: {fileID: 5866666021909216657, guid: 31ef4af53e74dfb4b9e09f46cdc23999, type: 3}
+      propertyPath: m_Controller
+      value: 
+      objectReference: {fileID: 9100000, guid: e7102a31e6257478c93774d375e3e14a, type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 31ef4af53e74dfb4b9e09f46cdc23999, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 6012581606407502897}
   m_SourcePrefab: {fileID: 100100000, guid: 31ef4af53e74dfb4b9e09f46cdc23999, type: 3}
+--- !u!1 &403340707864983233 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 31ef4af53e74dfb4b9e09f46cdc23999, type: 3}
+  m_PrefabInstance: {fileID: 673743262576675728}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &6012581606407502897
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 403340707864983233}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 03bda7996855c314e937218a48a3dfd0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  animator: {fileID: 6355432589455701505}
+  sampleRadius: 1
+--- !u!95 &6355432589455701505 stripped
+Animator:
+  m_CorrespondingSourceObject: {fileID: 5866666021909216657, guid: 31ef4af53e74dfb4b9e09f46cdc23999, type: 3}
+  m_PrefabInstance: {fileID: 673743262576675728}
+  m_PrefabAsset: {fileID: 0}
