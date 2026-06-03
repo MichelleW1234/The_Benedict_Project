@@ -12,6 +12,7 @@ public class UI : MonoBehaviour
 
     private GameObject currentSpawnedAgent; // Keeps track of the currently active agent
 
+
     public void OnAgentButtonClicked(int prefabIndex)
     {
         // 1. Validate the index to prevent errors
