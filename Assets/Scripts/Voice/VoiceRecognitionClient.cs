@@ -30,6 +30,7 @@ public sealed class VoiceRecognitionClient : MonoBehaviour
     private Coroutine streamCoroutine;
     private int lastSamplePosition;
     private bool microphoneStreaming;
+    private string activeMicrophoneDevice;
     private readonly ConcurrentQueue<byte[]> pendingMessages = new ConcurrentQueue<byte[]>();
 
     public bool IsConnected => websocket != null && websocket.State == WebSocketState.Open;
@@ -99,8 +100,26 @@ public sealed class VoiceRecognitionClient : MonoBehaviour
             return;
         }
 
-        string device = SelectedMicrophoneDevice();
-        microphoneClip = Microphone.Start(device, true, recordingBufferSeconds, sampleRate);
+        activeMicrophoneDevice = SelectedMicrophoneDevice();
+
+        try
+        {
+            microphoneClip = Microphone.Start(activeMicrophoneDevice, true, recordingBufferSeconds, sampleRate);
+        }
+        catch (Exception exception)
+        {
+            PublishStatus("Cannot start microphone: " + exception.Message);
+            activeMicrophoneDevice = null;
+            return;
+        }
+
+        if (microphoneClip == null)
+        {
+            PublishStatus("Cannot start microphone: no recording device is available.");
+            activeMicrophoneDevice = null;
+            return;
+        }
+
         lastSamplePosition = 0;
         microphoneStreaming = true;
         streamCoroutine = StartCoroutine(StreamMicrophone());
@@ -122,13 +141,13 @@ public sealed class VoiceRecognitionClient : MonoBehaviour
             streamCoroutine = null;
         }
 
-        string device = SelectedMicrophoneDevice();
-        if (Microphone.IsRecording(device))
+        if (Microphone.IsRecording(activeMicrophoneDevice))
         {
-            Microphone.End(device);
+            Microphone.End(activeMicrophoneDevice);
         }
 
         microphoneClip = null;
+        activeMicrophoneDevice = null;
         await SendAudioStreamEnd();
         PublishStatus("Microphone streaming stopped.");
     }
@@ -197,11 +216,12 @@ public sealed class VoiceRecognitionClient : MonoBehaviour
 
         while (microphoneStreaming)
         {
-            int currentPosition = Microphone.GetPosition(SelectedMicrophoneDevice());
+            int currentPosition = Microphone.GetPosition(activeMicrophoneDevice);
             if (currentPosition < 0 || microphoneClip == null)
             {
-                yield return wait;
-                continue;
+                PublishStatus("Microphone device changed or reset; stopping stream.");
+                StopMicrophoneStream();
+                yield break;
             }
 
             int availableFrames = GetAvailableFrames(currentPosition);
@@ -315,7 +335,21 @@ public sealed class VoiceRecognitionClient : MonoBehaviour
 
     private string SelectedMicrophoneDevice()
     {
-        return string.IsNullOrWhiteSpace(microphoneDevice) ? null : microphoneDevice;
+        if (string.IsNullOrWhiteSpace(microphoneDevice))
+        {
+            return null;
+        }
+
+        foreach (string device in Microphone.devices)
+        {
+            if (string.Equals(device, microphoneDevice, StringComparison.Ordinal))
+            {
+                return microphoneDevice;
+            }
+        }
+
+        PublishStatus("Configured microphone not found, using system default: " + microphoneDevice);
+        return null;
     }
 
     [Serializable]
