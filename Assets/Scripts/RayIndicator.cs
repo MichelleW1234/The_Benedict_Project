@@ -3,6 +3,7 @@ using Oculus.Interaction;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using UnityEngine.XR;
+using System.Collections.Generic;
 
 public class RayIndicator : MonoBehaviour
 {
@@ -16,7 +17,11 @@ public class RayIndicator : MonoBehaviour
     public Vector3 endPoint;
     // track previous state for right-hand trigger edge detection
     private bool prevRightTrigger = false;
+    private bool prevRightGrip = false;
     
+    [SerializeField]
+    private GameObject menu;
+
     void Update()
     {
         // Variable for new ray (actual ray itself)
@@ -42,6 +47,7 @@ public class RayIndicator : MonoBehaviour
         bool clicked = false;
         InputDevice rightHand = InputDevices.GetDeviceAtXRNode(XRNode.RightHand);
         bool rightTriggerPressed = false;
+        bool rightGripPressed = false;
         if (rightHand.isValid && rightHand.TryGetFeatureValue(CommonUsages.triggerButton, out rightTriggerPressed))
         {
             // edge-detect: only trigger on press down this frame
@@ -104,6 +110,27 @@ public class RayIndicator : MonoBehaviour
             }
         }
 
+        if (rightHand.isValid && rightHand.TryGetFeatureValue(CommonUsages.gripButton, out rightGripPressed))
+        {
+            // edge-detect: only trigger on press down this frame
+            Debug.Log("Grip state: " + rightGripPressed);
+            if (rightGripPressed && !prevRightGrip)
+            {
+                Debug.Log("Menu open");
+                openMenu();
+                
+            }
+        }
+        // update previous state for next frame
+        prevRightGrip = rightGripPressed;
+
+
+    }
+
+    void openMenu() {
+        if (menu != null) {
+            menu.gameObject.SetActive(!menu.gameObject.activeSelf);
+        }
     }
 
 

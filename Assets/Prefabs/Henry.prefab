@@ -95,8 +95,15 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   animator: {fileID: 6224937743560536712}
   sampleRadius: 1
+  rightHand: {fileID: 8515365584841050559}
+  flowerPrefab: {fileID: 4675840492191407959, guid: b6cc021c884610e438b7fb06249b8aa4, type: 3}
 --- !u!95 &6224937743560536712 stripped
 Animator:
   m_CorrespondingSourceObject: {fileID: 5866666021909216657, guid: 27615aba94a0a40308473c7154b05d87, type: 3}
+  m_PrefabInstance: {fileID: 507216037341056793}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &8515365584841050559 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: -1070350730909333850, guid: 27615aba94a0a40308473c7154b05d87, type: 3}
   m_PrefabInstance: {fileID: 507216037341056793}
   m_PrefabAsset: {fileID: 0}
