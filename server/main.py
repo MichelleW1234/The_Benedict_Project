@@ -58,6 +58,13 @@ VALID_INTENTS = {
     "close_inventory",
     "start",
     "stop",
+    "play_excited",
+    "play_happy",
+    "play_sad",
+    "play_clapping",
+    "play_hip_hop_dance",
+    "start_argue",
+    "start_talking_on_phone",
     "unknown",
 }
 
@@ -97,11 +104,20 @@ async def classify_intent(request: IntentRequest) -> IntentResponse:
     transcript = request.transcript.strip()
     prompt = (
         "Classify this Unity voice command into exactly one intent.\n"
-        "Allowed intents: open_inventory, close_inventory, start, stop, unknown.\n"
+        "Allowed intents: open_inventory, close_inventory, start, stop, "
+        "play_excited, play_happy, play_sad, play_clapping, play_hip_hop_dance, "
+        "start_argue, start_talking_on_phone, unknown.\n"
         "Use open_inventory for requests to open, show, view, or inspect inventory/items.\n"
         "Use close_inventory for requests to close, hide, dismiss, or exit inventory/items.\n"
         "Use start for requests to begin, go, continue, run, or proceed.\n"
         "Use stop for requests to stop, pause, wait, halt, or cancel movement/action.\n"
+        "Use play_excited for requests to get excited, celebrate, cheer, rally, or act victorious.\n"
+        "Use play_happy for requests to look happy, smile, or act joyful.\n"
+        "Use play_sad for requests to look sad, upset, or disappointed.\n"
+        "Use play_clapping for requests to clap, applaud, or give applause.\n"
+        "Use play_hip_hop_dance for requests to dance or hip hop dance.\n"
+        "Use start_argue for requests to argue, debate angrily, or act mad.\n"
+        "Use start_talking_on_phone for requests to make a call or talk on the phone.\n"
         "Use unknown if the transcript is not clearly one of those commands.\n"
         "Return only the intent label, with no explanation.\n\n"
         f"Transcript: {transcript}"
@@ -279,6 +295,7 @@ def _normalize_intent(raw_intent: str) -> str:
     intent = intent.strip("`'\". \n\t")
     if ":" in intent:
         intent = intent.rsplit(":", 1)[-1].strip()
+    intent = intent.replace("-", "_").replace(" ", "_")
     intent = intent.strip("{}[]`'\". \n\t")
     if intent in VALID_INTENTS:
         return intent
