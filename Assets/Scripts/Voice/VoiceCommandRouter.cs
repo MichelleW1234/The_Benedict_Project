@@ -12,12 +12,30 @@ public sealed class VoiceCommandRouter : MonoBehaviour
     [SerializeField] private string intentApiUrl = "http://127.0.0.1:3000/api/intent";
     [SerializeField] private bool fallbackToLocalPhrases = true;
 
+    [Header("Agent Animation")]
+    [SerializeField] private AgentController targetAgent;
+
     [Header("Command Events")]
     public UnityEvent onOpenInventory;
     public UnityEvent onCloseInventory;
     public UnityEvent onStart;
     public UnityEvent onStop;
+    public UnityEvent onExcited;
+    public UnityEvent onHappy;
+    public UnityEvent onSad;
+    public UnityEvent onClapping;
+    public UnityEvent onHipHopDance;
+    public UnityEvent onArgue;
+    public UnityEvent onTalkingOnPhone;
     public StringEvent onUnknownCommand;
+
+    private void Awake()
+    {
+        if (targetAgent == null)
+        {
+            targetAgent = FindAnyObjectByType<AgentController>();
+        }
+    }
 
     public void HandleTranscript(string transcript)
     {
@@ -79,14 +97,49 @@ public sealed class VoiceCommandRouter : MonoBehaviour
             return "close_inventory";
         }
 
-        if (ContainsAny(normalized, "start", "begin", "go"))
-        {
-            return "start";
-        }
-
         if (ContainsAny(normalized, "stop", "pause", "wait"))
         {
             return "stop";
+        }
+
+        if (ContainsAny(normalized, "excited", "celebrate", "rally", "victory", "cheer"))
+        {
+            return "play_excited";
+        }
+
+        if (ContainsAny(normalized, "happy", "smile", "joy", "pleased"))
+        {
+            return "play_happy";
+        }
+
+        if (ContainsAny(normalized, "sad", "upset", "unhappy", "depressed"))
+        {
+            return "play_sad";
+        }
+
+        if (ContainsAny(normalized, "clap", "clapping", "applaud", "applause"))
+        {
+            return "play_clapping";
+        }
+
+        if (ContainsAny(normalized, "dance", "hip hop", "hip-hop"))
+        {
+            return "play_hip_hop_dance";
+        }
+
+        if (ContainsAny(normalized, "argue", "argument", "mad", "angry", "debate"))
+        {
+            return "start_argue";
+        }
+
+        if (ContainsAny(normalized, "phone", "call", "cell phone", "telephone"))
+        {
+            return "start_talking_on_phone";
+        }
+
+        if (ContainsAny(normalized, "start", "begin", "go"))
+        {
+            return "start";
         }
 
         return "unknown";
@@ -107,6 +160,43 @@ public sealed class VoiceCommandRouter : MonoBehaviour
                 break;
             case "stop":
                 onStop?.Invoke();
+                targetAgent?.StopPersistentGestures();
+                break;
+            case "play_excited":
+            case "excited":
+                targetAgent?.PlayExcitedGesture();
+                onExcited?.Invoke();
+                break;
+            case "play_happy":
+            case "happy":
+                targetAgent?.PlayHappyGesture();
+                onHappy?.Invoke();
+                break;
+            case "play_sad":
+            case "sad":
+                targetAgent?.PlaySadGesture();
+                onSad?.Invoke();
+                break;
+            case "play_clapping":
+            case "clapping":
+                targetAgent?.PlayClappingGesture();
+                onClapping?.Invoke();
+                break;
+            case "play_hip_hop_dance":
+            case "hip_hop_dance":
+            case "hip_hop_dancing":
+                targetAgent?.PlayHipHopDanceGesture();
+                onHipHopDance?.Invoke();
+                break;
+            case "start_argue":
+            case "argue":
+                targetAgent?.StartArgueGesture();
+                onArgue?.Invoke();
+                break;
+            case "start_talking_on_phone":
+            case "talking_on_phone":
+                targetAgent?.StartTalkingOnPhoneGesture();
+                onTalkingOnPhone?.Invoke();
                 break;
             default:
                 onUnknownCommand?.Invoke(transcript);
@@ -116,7 +206,9 @@ public sealed class VoiceCommandRouter : MonoBehaviour
 
     private static string NormalizeIntent(string intent)
     {
-        return string.IsNullOrWhiteSpace(intent) ? "unknown" : intent.Trim().ToLowerInvariant();
+        return string.IsNullOrWhiteSpace(intent)
+            ? "unknown"
+            : intent.Trim().ToLowerInvariant().Replace("-", "_").Replace(" ", "_");
     }
 
     private static bool ContainsAny(string text, params string[] phrases)

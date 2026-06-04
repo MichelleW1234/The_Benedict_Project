@@ -17,33 +17,88 @@ public class AgentController : MonoBehaviour
         
     }
 
-    void PlayExcitedGesture() {
+    public void PlayExcitedGesture() {
+        if (!HasAnimator()) {
+            return;
+        }
+
+        ClearPersistentGestures();
         animator.SetTrigger("Excited");
     }
 
-    void PlayHappyGesture() {
+    public void PlayHappyGesture() {
+        if (!HasAnimator()) {
+            return;
+        }
+
+        ClearPersistentGestures();
         animator.SetTrigger("Happy");
     }
 
-    void PlaySadGesture() {
+    public void PlaySadGesture() {
+        if (!HasAnimator()) {
+            return;
+        }
+
+        ClearPersistentGestures();
         animator.SetTrigger("Sad");
     }
 
-    void PlayClappingGesture() {
+    public void PlayClappingGesture() {
+        if (!HasAnimator()) {
+            return;
+        }
+
+        ClearPersistentGestures();
         animator.SetTrigger("Clapping");
     }
 
-    void PlayHipHopDanceGesture() {
+    public void PlayHipHopDanceGesture() {
+        if (!HasAnimator()) {
+            return;
+        }
+
+        ClearPersistentGestures();
         animator.SetTrigger("Hip_hop_dancing");
     }
 
-    void StartArgueGesture() {
+    public void StartArgueGesture() {
+        if (!HasAnimator()) {
+            return;
+        }
+
+        ClearPersistentGestures();
         animator.SetBool("Argue", true);
     }
 
-    void StartTalkingOnPhoneGesture() {
+    public void StartTalkingOnPhoneGesture() {
+        if (!HasAnimator()) {
+            return;
+        }
+
+        ClearPersistentGestures();
         animator.SetBool("Talking_on_phone", true);
     }
 
+    public void StopPersistentGestures() {
+        if (!HasAnimator()) {
+            return;
+        }
 
+        ClearPersistentGestures();
+    }
+
+    private void ClearPersistentGestures() {
+        animator.SetBool("Argue", false);
+        animator.SetBool("Talking_on_phone", false);
+    }
+
+    private bool HasAnimator() {
+        if (animator != null) {
+            return true;
+        }
+
+        Debug.LogWarning("[AgentController] Cannot play gesture because Animator is not assigned.");
+        return false;
+    }
 }
