@@ -18,6 +18,9 @@ public class RayIndicator : MonoBehaviour
     // track previous state for right-hand trigger edge detection
     private bool prevRightTrigger = false;
     private bool prevRightGrip = false;
+    private bool prevRightPrimary = false;
+    private GameObject grabbedObject = null;
+    private Rigidbody grabbedRb = null;
     
     [SerializeField]
     private GameObject menu;
@@ -48,6 +51,7 @@ public class RayIndicator : MonoBehaviour
         InputDevice rightHand = InputDevices.GetDeviceAtXRNode(XRNode.RightHand);
         bool rightTriggerPressed = false;
         bool rightGripPressed = false;
+        bool rightPrimaryPressed = false;
         if (rightHand.isValid && rightHand.TryGetFeatureValue(CommonUsages.triggerButton, out rightTriggerPressed))
         {
             // edge-detect: only trigger on press down this frame
@@ -56,7 +60,52 @@ public class RayIndicator : MonoBehaviour
                 clicked = true;
             }
         }
-        // update previous state for next frame
+
+        // Primary / A button handling (toggle grab/release)
+        if (rightHand.isValid && rightHand.TryGetFeatureValue(CommonUsages.primaryButton, out rightPrimaryPressed))
+        {
+            if (rightPrimaryPressed && !prevRightPrimary)
+            {
+                // On primary-button press edge
+                if (grabbedObject == null)
+                {
+                    // Try to grab the currently pointed object
+                    if (hasHit && hit.collider != null)
+                    {
+                        var target = hit.collider.gameObject;
+                        // detach from any parent (e.g., agent hand)
+                        target.transform.SetParent(null, true);
+                        // attempt to use Rigidbody if present
+                        var rb = target.GetComponent<Rigidbody>();
+                        if (rb != null)
+                        {
+                            // make kinematic while held to avoid physics interference
+                            rb.isKinematic = true;
+                            grabbedRb = rb;
+                        }
+                        // parent to the controller ray origin so it follows the controller
+                        target.transform.SetParent(rayOrigin, true);
+                        grabbedObject = target;
+                    }
+                }
+                else
+                {
+                    // release currently grabbed object
+                    grabbedObject.transform.SetParent(null, true);
+                    if (grabbedRb != null)
+                    {
+                        grabbedRb.isKinematic = false;
+                        grabbedRb = null;
+                    }
+                    grabbedObject = null;
+                }
+            }
+        }
+
+        // update previous primary state for next frame
+        prevRightPrimary = rightPrimaryPressed;
+
+        // update previous state for trigger next frame
         prevRightTrigger = rightTriggerPressed;
 
         if (clicked)
