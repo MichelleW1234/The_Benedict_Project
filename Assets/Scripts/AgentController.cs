@@ -23,7 +23,7 @@ public class AgentController : MonoBehaviour
 
         if (animator != null) {
             // call gesture functions here for testing
-            PlayFlowerGesture();
+
         }
     }
     void Update()
