@@ -139,6 +139,7 @@ async def live_voice(websocket: WebSocket) -> None:
     try:
         client = require_genai_client()
     except RuntimeError as error:
+        print(f"[live_voice setup error] {error!r}")
         await websocket.send_json({"type": "error", "message": str(error)})
         await websocket.close(code=1011)
         return
