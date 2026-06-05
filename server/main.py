@@ -181,6 +181,7 @@ async def live_voice(websocket: WebSocket) -> None:
     except asyncio.CancelledError:
         raise
     except Exception as error:
+        print(f"[live_voice error] {error!r}")
         await _safe_send_json(websocket, {"type": "error", "message": str(error)})
         await _safe_close(websocket)
 

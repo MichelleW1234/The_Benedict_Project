@@ -244,7 +244,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   useNlpClassification: 1
   intentApiUrl: http://127.0.0.1:3000/api/intent
-  androidIntentApiUrl: http://100.83.50.228:3000/api/intent
+  androidIntentApiUrl: http://128.54.70.53:3000/api/intent
   fallbackToLocalPhrases: 1
   targetAgent: {fileID: 0}
   onOpenInventory:
@@ -299,7 +299,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   websocketUrl: ws://127.0.0.1:3000/ws/live
-  androidWebsocketUrl: ws://100.83.50.228:3000/ws/live
+  androidWebsocketUrl: ws://128.54.70.53:3000/ws/live
   connectOnStart: 1
   streamMicrophoneOnConnect: 1
   microphoneDevice: 
@@ -345,11 +345,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!82 &266780383 stripped
-AudioSource:
-  m_CorrespondingSourceObject: {fileID: 7176344439015315549, guid: 0a7d2469f24041c4284c66706f84c45e, type: 3}
-  m_PrefabInstance: {fileID: 1240124114}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &276698412
 GameObject:
   m_ObjectHideFlags: 0
@@ -878,54 +873,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 543206799}
   m_CullTransparentMesh: 1
---- !u!1 &551549708
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 551549710}
-  - component: {fileID: 551549709}
-  m_Layer: 0
-  m_Name: Audio Manager
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &551549709
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 551549708}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b60d46655468a9c429ef852d158365d1, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  audioSource: {fileID: 266780383}
-  heartbeatClip: {fileID: 8300000, guid: 5a4e1af100ab7f646ac88c3b0b9a42ee, type: 3}
-  normalPitch: 1
-  fastPitch: 1.8
---- !u!4 &551549710
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 551549708}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &622071132
 GameObject:
   m_ObjectHideFlags: 0
@@ -3462,5 +3409,4 @@ SceneRoots:
   - {fileID: 1803166744}
   - {fileID: 1190850491}
   - {fileID: 824374416}
-  - {fileID: 551549710}
   - {fileID: 245280002}

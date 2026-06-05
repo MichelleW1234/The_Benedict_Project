@@ -186,8 +186,17 @@ public sealed class VoiceRecognitionClient : MonoBehaviour
     private void HandleMessage(byte[] bytes)
     {
         string json = Encoding.UTF8.GetString(bytes);
+
+        Debug.Log($"RAW MESSAGE: [{json}]");
+
         VoiceServerMessage message = JsonUtility.FromJson<VoiceServerMessage>(json);
 
+        if (message == null)
+        {
+            Debug.LogError("Failed to parse message");
+            return;
+        }
+        
         switch (message.type)
         {
             case "ready":
