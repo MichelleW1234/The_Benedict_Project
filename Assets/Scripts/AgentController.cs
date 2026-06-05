@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections; // Required for Coroutines
+using Oculus.Interaction;
 //using System.Diagnostics;
 
 public class AgentController : MonoBehaviour
@@ -19,9 +20,10 @@ public class AgentController : MonoBehaviour
 
     void Start()
     {
+
         if (animator != null) {
             // call gesture functions here for testing
-            StartTalkingOnPhoneGesture();
+            PlayFlowerGesture();
         }
     }
     void Update()

@@ -97,6 +97,7 @@ MonoBehaviour:
   sampleRadius: 1
   rightHand: {fileID: 8682029974118714678}
   flowerPrefab: {fileID: 4675840492191407959, guid: b6cc021c884610e438b7fb06249b8aa4, type: 3}
+  audioManager: {fileID: 3974739404476747268, guid: a911fb94be06b43459fbb521415a4b94, type: 3}
 --- !u!95 &6355432589455701505 stripped
 Animator:
   m_CorrespondingSourceObject: {fileID: 5866666021909216657, guid: 31ef4af53e74dfb4b9e09f46cdc23999, type: 3}
