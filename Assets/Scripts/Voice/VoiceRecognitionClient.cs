@@ -10,6 +10,7 @@ public sealed class VoiceRecognitionClient : MonoBehaviour
 {
     [Header("Connection")]
     [SerializeField] private string websocketUrl = "ws://127.0.0.1:3000/ws/live";
+    [SerializeField] private string androidWebsocketUrl;
     [SerializeField] private bool connectOnStart = true;
     [SerializeField] private bool streamMicrophoneOnConnect = true;
 
@@ -64,14 +65,27 @@ public sealed class VoiceRecognitionClient : MonoBehaviour
             return;
         }
 
-        websocket = new WebSocket(websocketUrl);
+        string resolvedWebsocketUrl = ResolveWebsocketUrl();
+        websocket = new WebSocket(resolvedWebsocketUrl);
         websocket.OnOpen += HandleOpen;
         websocket.OnMessage += EnqueueMessage;
         websocket.OnError += error => PublishStatus("WebSocket error: " + error);
         websocket.OnClose += code => PublishStatus("WebSocket closed: " + code);
 
-        PublishStatus("Connecting to voice backend...");
+        PublishStatus("Connecting to voice backend: " + resolvedWebsocketUrl);
         await websocket.Connect();
+    }
+
+    private string ResolveWebsocketUrl()
+    {
+#if UNITY_ANDROID && !UNITY_EDITOR
+        if (!string.IsNullOrWhiteSpace(androidWebsocketUrl))
+        {
+            return androidWebsocketUrl;
+        }
+#endif
+
+        return websocketUrl;
     }
 
     public async System.Threading.Tasks.Task Disconnect()

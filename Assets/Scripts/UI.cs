@@ -11,7 +11,6 @@ public class UI : MonoBehaviour
     private Vector3 spawnPoint = new Vector3(0f,-1f,1.48000002f); // The location where the agent should appear
 
     private GameObject currentSpawnedAgent; // Keeps track of the currently active agent
-    [SerializeField]
 
     public void OnAgentButtonClicked(int prefabIndex)
     {

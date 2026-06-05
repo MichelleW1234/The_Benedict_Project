@@ -7,10 +7,12 @@ public class AgentController : MonoBehaviour
     public Animator animator;
     public float sampleRadius = 1.0f;
 
-    [SerializeField] 
+    [SerializeField]
     private Transform rightHand;
     [SerializeField]
     private GameObject flowerPrefab;
+    [SerializeField]
+    private AudioManager audioManager;
 
     private GameObject spawnedFlower;
     private bool FlowerPlaying = false;
@@ -37,6 +39,7 @@ public class AgentController : MonoBehaviour
 
         ClearPersistentGestures();
         animator.SetTrigger("Excited");
+        audioManager?.PlayFastHeartBeatSound();
     }
 
     public void PlayHappyGesture() {
@@ -46,6 +49,7 @@ public class AgentController : MonoBehaviour
 
         ClearPersistentGestures();
         animator.SetTrigger("Happy");
+        audioManager?.PlayFastHeartBeatSound();
     }
 
     public void PlaySadGesture() {
@@ -99,15 +103,21 @@ public class AgentController : MonoBehaviour
         }
 
         ClearPersistentGestures();
+    }
 
-    void PlayFlowerGesture() {
+    public void PlayFlowerGesture() {
+        if (!HasAnimator() || FlowerPlaying) {
+            return;
+        }
+
+        ClearPersistentGestures();
         FlowerPlaying = true;
         StartCoroutine(FlowerSequence());
-        FlowerPlaying = false;
     }
 
     private IEnumerator FlowerSequence() {
         animator.SetTrigger("Flower");
+        audioManager?.PlayFastHeartBeatSound();
         CreateFlower();
 
         yield return null;
@@ -116,7 +126,7 @@ public class AgentController : MonoBehaviour
 
         yield return new WaitForSeconds(animationLength + 3.0f);
 
-        
+        FlowerPlaying = false;
     }
 
     void CreateFlower() {

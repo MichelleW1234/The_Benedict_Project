@@ -10,6 +10,7 @@ public sealed class VoiceCommandRouter : MonoBehaviour
     [Header("NLP Intent Classification")]
     [SerializeField] private bool useNlpClassification = true;
     [SerializeField] private string intentApiUrl = "http://127.0.0.1:3000/api/intent";
+    [SerializeField] private string androidIntentApiUrl;
     [SerializeField] private bool fallbackToLocalPhrases = true;
 
     [Header("Agent Animation")]
@@ -27,6 +28,7 @@ public sealed class VoiceCommandRouter : MonoBehaviour
     public UnityEvent onHipHopDance;
     public UnityEvent onArgue;
     public UnityEvent onTalkingOnPhone;
+    public UnityEvent onFlower;
     public StringEvent onUnknownCommand;
 
     private void Awake()
@@ -58,7 +60,7 @@ public sealed class VoiceCommandRouter : MonoBehaviour
         var payload = new IntentRequest { transcript = transcript };
         byte[] body = Encoding.UTF8.GetBytes(JsonUtility.ToJson(payload));
 
-        using var request = new UnityWebRequest(intentApiUrl, UnityWebRequest.kHttpVerbPOST);
+        using var request = new UnityWebRequest(ResolveIntentApiUrl(), UnityWebRequest.kHttpVerbPOST);
         request.uploadHandler = new UploadHandlerRaw(body);
         request.downloadHandler = new DownloadHandlerBuffer();
         request.SetRequestHeader("Content-Type", "application/json");
@@ -137,6 +139,11 @@ public sealed class VoiceCommandRouter : MonoBehaviour
             return "start_talking_on_phone";
         }
 
+        if (ContainsAny(normalized, "flower", "flowers", "give flowers", "give flower", "kneel", "kneel down", "kneeling"))
+        {
+            return "play_flower";
+        }
+
         if (ContainsAny(normalized, "start", "begin", "go"))
         {
             return "start";
@@ -198,6 +205,17 @@ public sealed class VoiceCommandRouter : MonoBehaviour
                 targetAgent?.StartTalkingOnPhoneGesture();
                 onTalkingOnPhone?.Invoke();
                 break;
+            case "play_flower":
+            case "give_flowers":
+            case "give_flower":
+            case "flower":
+            case "flowers":
+            case "kneel":
+            case "kneel_down":
+            case "kneeling":
+                targetAgent?.PlayFlowerGesture();
+                onFlower?.Invoke();
+                break;
             default:
                 onUnknownCommand?.Invoke(transcript);
                 break;
@@ -209,6 +227,18 @@ public sealed class VoiceCommandRouter : MonoBehaviour
         return string.IsNullOrWhiteSpace(intent)
             ? "unknown"
             : intent.Trim().ToLowerInvariant().Replace("-", "_").Replace(" ", "_");
+    }
+
+    private string ResolveIntentApiUrl()
+    {
+#if UNITY_ANDROID && !UNITY_EDITOR
+        if (!string.IsNullOrWhiteSpace(androidIntentApiUrl))
+        {
+            return androidIntentApiUrl;
+        }
+#endif
+
+        return intentApiUrl;
     }
 
     private static bool ContainsAny(string text, params string[] phrases)

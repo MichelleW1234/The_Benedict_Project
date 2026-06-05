@@ -206,6 +206,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a455dfaec74de484ca4e775f7cd12253, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  useNlpClassification: 1
+  intentApiUrl: http://127.0.0.1:3000/api/intent
+  androidIntentApiUrl: http://100.83.50.228:3000/api/intent
+  fallbackToLocalPhrases: 1
+  targetAgent: {fileID: 0}
   onOpenInventory:
     m_PersistentCalls:
       m_Calls: []
@@ -234,6 +239,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   websocketUrl: ws://127.0.0.1:3000/ws/live
+  androidWebsocketUrl: ws://100.83.50.228:3000/ws/live
   connectOnStart: 1
   streamMicrophoneOnConnect: 1
   microphoneDevice: 

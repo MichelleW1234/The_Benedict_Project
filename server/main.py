@@ -63,6 +63,7 @@ VALID_INTENTS = {
     "play_sad",
     "play_clapping",
     "play_hip_hop_dance",
+    "play_flower",
     "start_argue",
     "start_talking_on_phone",
     "unknown",
@@ -106,7 +107,7 @@ async def classify_intent(request: IntentRequest) -> IntentResponse:
         "Classify this Unity voice command into exactly one intent.\n"
         "Allowed intents: open_inventory, close_inventory, start, stop, "
         "play_excited, play_happy, play_sad, play_clapping, play_hip_hop_dance, "
-        "start_argue, start_talking_on_phone, unknown.\n"
+        "play_flower, start_argue, start_talking_on_phone, unknown.\n"
         "Use open_inventory for requests to open, show, view, or inspect inventory/items.\n"
         "Use close_inventory for requests to close, hide, dismiss, or exit inventory/items.\n"
         "Use start for requests to begin, go, continue, run, or proceed.\n"
@@ -116,6 +117,7 @@ async def classify_intent(request: IntentRequest) -> IntentResponse:
         "Use play_sad for requests to look sad, upset, or disappointed.\n"
         "Use play_clapping for requests to clap, applaud, or give applause.\n"
         "Use play_hip_hop_dance for requests to dance or hip hop dance.\n"
+        "Use play_flower for requests to kneel down, give flowers, or present a bouquet.\n"
         "Use start_argue for requests to argue, debate angrily, or act mad.\n"
         "Use start_talking_on_phone for requests to make a call or talk on the phone.\n"
         "Use unknown if the transcript is not clearly one of those commands.\n"
