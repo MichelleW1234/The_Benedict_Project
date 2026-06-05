@@ -64,8 +64,10 @@ public class RayIndicator : MonoBehaviour
         // Primary / A button handling (toggle grab/release)
         if (rightHand.isValid && rightHand.TryGetFeatureValue(CommonUsages.primaryButton, out rightPrimaryPressed))
         {
+            Debug.Log("Primary button read: " + rightPrimaryPressed + " (prev: " + prevRightPrimary + ")");
             if (rightPrimaryPressed && !prevRightPrimary)
             {
+                Debug.Log("Primary button press edge detected.");
                 // On primary-button press edge
                 if (grabbedObject == null)
                 {
@@ -73,23 +75,35 @@ public class RayIndicator : MonoBehaviour
                     if (hasHit && hit.collider != null)
                     {
                         var target = hit.collider.gameObject;
+                        Debug.Log("Attempting to grab: " + target.name);
                         // detach from any parent (e.g., agent hand)
                         target.transform.SetParent(null, true);
                         // attempt to use Rigidbody if present
                         var rb = target.GetComponent<Rigidbody>();
                         if (rb != null)
                         {
+                            Debug.Log("Found Rigidbody on target; making kinematic while held.");
                             // make kinematic while held to avoid physics interference
                             rb.isKinematic = true;
                             grabbedRb = rb;
                         }
+                        else
+                        {
+                            Debug.Log("No Rigidbody on target.");
+                        }
                         // parent to the controller ray origin so it follows the controller
                         target.transform.SetParent(rayOrigin, true);
                         grabbedObject = target;
+                        Debug.Log("Grabbed object: " + target.name);
+                    }
+                    else
+                    {
+                        Debug.Log("Primary press: nothing hit to grab.");
                     }
                 }
                 else
                 {
+                    Debug.Log("Releasing grabbed object: " + (grabbedObject != null ? grabbedObject.name : "(null)"));
                     // release currently grabbed object
                     grabbedObject.transform.SetParent(null, true);
                     if (grabbedRb != null)
