@@ -3275,6 +3275,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 3206975202446751870, guid: 37d91e6d69d38424892b353c19374b62, type: 3}
+      propertyPath: witRuntimeConfiguration.witConfiguration
+      value: 
+      objectReference: {fileID: 11400000, guid: 65ff8d25d7a1e8441a1e1662cfe2f1e9, type: 2}
     - target: {fileID: 3880346293195230091, guid: 37d91e6d69d38424892b353c19374b62, type: 3}
       propertyPath: m_Name
       value: VoiceSystem
@@ -3318,6 +3322,22 @@ PrefabInstance:
     - target: {fileID: 3960578627150060426, guid: 37d91e6d69d38424892b353c19374b62, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8933376997404908651, guid: 37d91e6d69d38424892b353c19374b62, type: 3}
+      propertyPath: activateImmediately
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8933376997404908651, guid: 37d91e6d69d38424892b353c19374b62, type: 3}
+      propertyPath: onInputTranscript.m_PersistentCalls.m_Calls.Array.size
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8933376997404908651, guid: 37d91e6d69d38424892b353c19374b62, type: 3}
+      propertyPath: onInputTranscript.m_PersistentCalls.m_Calls.Array.data[0].m_Mode
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8933376997404908651, guid: 37d91e6d69d38424892b353c19374b62, type: 3}
+      propertyPath: onInputTranscript.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
+      value: 
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

@@ -109,15 +109,6 @@ public sealed class VoiceRecognitionClient : MonoBehaviour
 
     private void Awake()
     {
-        if (voiceService == null)
-        {
-            voiceService = FindAnyObjectByType<AppVoiceExperience>();
-        }
-
-        if (commandRouter == null)
-        {
-            commandRouter = FindAnyObjectByType<VoiceCommandRouter>();
-        }
     }
 
     private void OnEnable()
@@ -162,6 +153,16 @@ public sealed class VoiceRecognitionClient : MonoBehaviour
 
     public void StartMicrophoneStream()
     {
+        Debug.Log("[VoiceRecognitionClient] Voice Service name: " + voiceService.name);
+        Debug.Log("[VoiceRecognitionClient] Active: " + voiceService.Active);
+        Debug.Log("[VoiceRecognitionClient] MicActive: " + voiceService.MicActive);
+        Debug.Log("[VoiceRecognitionClient] CanActivateAudio: " + voiceService.CanActivateAudio());
+
+        if (!voiceService.CanActivateAudio())
+        {
+            Debug.LogError("[VoiceRecognitionClient] Activate audio error: " + voiceService.GetActivateAudioError());
+            return;
+        }
         ResolveDependencies();
 
         if (voiceService == null)
@@ -191,6 +192,8 @@ public sealed class VoiceRecognitionClient : MonoBehaviour
             voiceService.Activate();
         }
 
+
+        //on success
         PublishStatus("Meta Voice SDK microphone listening started.");
     }
 
@@ -302,7 +305,9 @@ public sealed class VoiceRecognitionClient : MonoBehaviour
 
         if (logVoiceDetection)
         {
-            PublishStatus("Partial voice detected: " + transcript.Trim());
+            string trimmedTranscript = transcript.Trim();
+            Debug.Log("[VoiceRecognitionClient] Partial words heard: " + trimmedTranscript);
+            PublishStatus("Partial voice detected: " + trimmedTranscript);
         }
     }
 
@@ -315,6 +320,7 @@ public sealed class VoiceRecognitionClient : MonoBehaviour
 
         voiceDetectedThisUtterance = true;
         string trimmedTranscript = transcript.Trim();
+        Debug.Log("[VoiceRecognitionClient] Final words heard: " + trimmedTranscript);
         PublishStatus("Voice recognized: " + trimmedTranscript);
         onInputTranscript?.Invoke(trimmedTranscript);
 
