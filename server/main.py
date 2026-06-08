@@ -74,10 +74,14 @@ def require_genai_client() -> Any:
     if genai is None or types is None:
         raise RuntimeError("Missing dependency: install google-genai from server/requirements.txt.")
 
-    if not os.getenv("GEMINI_API_KEY"):
+    api_key = os.getenv("GEMINI_API_KEY")
+    if not api_key:
         raise RuntimeError("Missing GEMINI_API_KEY. Add it to .env before starting the server.")
 
-    return genai.Client()
+    print("Gemini key starts with:", os.getenv("GEMINI_API_KEY")[:8])
+    print("Live model:", GEMINI_LIVE_MODEL)
+
+    return genai.Client(api_key=api_key)
 
 
 @app.get("/health")
@@ -188,6 +192,7 @@ async def live_voice(websocket: WebSocket) -> None:
 
 
 async def _forward_unity_messages(websocket: WebSocket, session: Any) -> None:
+    audio_chunk_count = 0
     while True:
         message = await websocket.receive_json()
         message_type = message.get("type")
@@ -195,6 +200,13 @@ async def _forward_unity_messages(websocket: WebSocket, session: Any) -> None:
         if message_type == "audio":
             audio_data = _decode_audio(message)
             mime_type = message.get("mime_type") or message.get("mimeType") or DEFAULT_AUDIO_MIME_TYPE
+            audio_chunk_count += 1
+            if audio_chunk_count == 1 or audio_chunk_count % 50 == 0:
+                peak, rms = _pcm16_stats(audio_data)
+                print(
+                    f"[live_voice] Received audio chunk #{audio_chunk_count}: "
+                    f"{len(audio_data)} bytes, {mime_type}, pcm peak {peak:.6f}, pcm rms {rms:.6f}"
+                )
 
             await session.send_realtime_input(
                 audio=types.Blob(data=audio_data, mime_type=mime_type)
@@ -243,6 +255,7 @@ async def _forward_gemini_messages(session: Any, websocket: WebSocket) -> None:
 
         input_transcription = getattr(server_content, "input_transcription", None)
         if input_transcription and getattr(input_transcription, "text", None):
+            print(f"[live_voice] Voice recognized: {input_transcription.text}")
             await websocket.send_json(
                 {
                     "type": "input_transcript",
@@ -284,6 +297,27 @@ def _decode_audio(message: dict[str, Any]) -> bytes:
     if not isinstance(raw_data, str) or not raw_data:
         raise ValueError("Audio messages must include base64 audio in the data field.")
     return base64.b64decode(raw_data)
+
+
+def _pcm16_stats(audio_data: bytes) -> tuple[float, float]:
+    if not audio_data:
+        return 0.0, 0.0
+
+    peak = 0
+    sum_squares = 0
+    sample_count = 0
+    for index in range(0, len(audio_data) - 1, 2):
+        sample = int.from_bytes(audio_data[index : index + 2], "little", signed=True)
+        magnitude = abs(sample)
+        peak = max(peak, magnitude)
+        sum_squares += sample * sample
+        sample_count += 1
+
+    if sample_count == 0:
+        return 0.0, 0.0
+
+    rms = (sum_squares / sample_count) ** 0.5
+    return peak / 32767, rms / 32767
 
 
 def _normalize_intent(raw_intent: str) -> str:

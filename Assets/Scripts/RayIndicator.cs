@@ -64,7 +64,6 @@ public class RayIndicator : MonoBehaviour
         // Primary / A button handling (toggle grab/release)
         if (rightHand.isValid && rightHand.TryGetFeatureValue(CommonUsages.primaryButton, out rightPrimaryPressed))
         {
-            Debug.Log("Primary button read: " + rightPrimaryPressed + " (prev: " + prevRightPrimary + ")");
             if (rightPrimaryPressed && !prevRightPrimary)
             {
                 Debug.Log("Primary button press edge detected.");
@@ -176,7 +175,6 @@ public class RayIndicator : MonoBehaviour
         if (rightHand.isValid && rightHand.TryGetFeatureValue(CommonUsages.gripButton, out rightGripPressed))
         {
             // edge-detect: only trigger on press down this frame
-            Debug.Log("Grip state: " + rightGripPressed);
             if (rightGripPressed && !prevRightGrip)
             {
                 Debug.Log("Menu open");

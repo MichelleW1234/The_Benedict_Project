@@ -1,353 +1,389 @@
 using System;
 using System.Collections;
-using System.Collections.Concurrent;
-using System.Text;
-using Meta.Net.NativeWebSocket;
+using Oculus.Voice;
 using UnityEngine;
 using UnityEngine.Events;
 
 public sealed class VoiceRecognitionClient : MonoBehaviour
 {
-    [Header("Connection")]
-    [SerializeField] private string websocketUrl = "ws://127.0.0.1:3000/ws/live";
-    [SerializeField] private string androidWebsocketUrl;
-    [SerializeField] private bool connectOnStart = true;
-    [SerializeField] private bool streamMicrophoneOnConnect = true;
+    [Header("Meta Voice SDK")]
+    [SerializeField] private AppVoiceExperience voiceService;
+    [SerializeField] private bool listenOnStart = true;
+    [SerializeField] private bool activateImmediately = false;
+    [SerializeField] private bool restartAfterUtterance = true;
+    [SerializeField] private float restartDelaySeconds = 0.25f;
+    [SerializeField] private bool logVoiceDetection = true;
 
-    [Header("Microphone")]
-    [SerializeField] private string microphoneDevice;
-    [SerializeField] private int sampleRate = 16000;
-    [SerializeField] private int recordingBufferSeconds = 10;
-    [SerializeField] private float chunkSeconds = 0.1f;
+    [Header("Hard-Coded LLM")]
+    [SerializeField] private VoiceCommandRouter commandRouter;
+    [SerializeField] private HardCodedVoiceResponse[] responses =
+    {
+        new HardCodedVoiceResponse
+        {
+            keywords = new[] { "open inventory", "show inventory", "inventory" },
+            outputText = "Opening inventory.",
+            commandTranscript = "open inventory"
+        },
+        new HardCodedVoiceResponse
+        {
+            keywords = new[] { "close inventory", "hide inventory" },
+            outputText = "Closing inventory.",
+            commandTranscript = "close inventory"
+        },
+        new HardCodedVoiceResponse
+        {
+            keywords = new[] { "stop", "pause", "wait" },
+            outputText = "Stopping the current gesture.",
+            commandTranscript = "stop"
+        },
+        new HardCodedVoiceResponse
+        {
+            keywords = new[] { "excited", "celebrate", "rally", "victory", "cheer" },
+            outputText = "I'll celebrate.",
+            commandTranscript = "excited"
+        },
+        new HardCodedVoiceResponse
+        {
+            keywords = new[] { "happy", "smile", "joy", "pleased" },
+            outputText = "I'll look happy.",
+            commandTranscript = "happy"
+        },
+        new HardCodedVoiceResponse
+        {
+            keywords = new[] { "sad", "upset", "unhappy", "depressed" },
+            outputText = "I'll look sad.",
+            commandTranscript = "sad"
+        },
+        new HardCodedVoiceResponse
+        {
+            keywords = new[] { "clap", "clapping", "applaud", "applause" },
+            outputText = "I'll clap.",
+            commandTranscript = "clapping"
+        },
+        new HardCodedVoiceResponse
+        {
+            keywords = new[] { "dance", "hip hop", "hip-hop" },
+            outputText = "Starting the dance.",
+            commandTranscript = "hip hop dance"
+        },
+        new HardCodedVoiceResponse
+        {
+            keywords = new[] { "argue", "argument", "mad", "angry", "debate" },
+            outputText = "Starting the arguing gesture.",
+            commandTranscript = "argue"
+        },
+        new HardCodedVoiceResponse
+        {
+            keywords = new[] { "phone", "call", "cell phone", "telephone" },
+            outputText = "Starting the phone gesture.",
+            commandTranscript = "phone"
+        },
+        new HardCodedVoiceResponse
+        {
+            keywords = new[] { "flower", "flowers", "give flowers", "give flower", "kneel", "kneel down", "kneeling" },
+            outputText = "Offering flowers.",
+            commandTranscript = "flower"
+        },
+        new HardCodedVoiceResponse
+        {
+            keywords = new[] { "start", "begin", "go" },
+            outputText = "Starting.",
+            commandTranscript = "start"
+        }
+    };
+    [SerializeField] private string unknownOutputText = "I heard you, but I do not have a hard-coded response for that yet.";
 
     [Header("Events")]
     public TranscriptEvent onInputTranscript;
     public TranscriptEvent onOutputTranscript;
+    public TranscriptEvent onCommandTranscript;
     public StatusEvent onStatusChanged;
     public AudioEvent onAudioReceived;
 
-    private WebSocket websocket;
-    private AudioClip microphoneClip;
-    private Coroutine streamCoroutine;
-    private int lastSamplePosition;
-    private bool microphoneStreaming;
-    private string activeMicrophoneDevice;
-    private readonly ConcurrentQueue<byte[]> pendingMessages = new ConcurrentQueue<byte[]>();
+    private Coroutine restartCoroutine;
+    private bool shouldAutoRestart;
+    private bool voiceDetectedThisUtterance;
 
-    public bool IsConnected => websocket != null && websocket.State == WebSocketState.Open;
-    public bool IsMicrophoneStreaming => microphoneStreaming;
+    public bool IsConnected => voiceService != null;
+    public bool IsMicrophoneStreaming => voiceService != null && voiceService.MicActive;
 
-    private async void Start()
+    private void Awake()
     {
-        if (connectOnStart)
+        if (voiceService == null)
         {
-            await Connect();
+            voiceService = FindAnyObjectByType<AppVoiceExperience>();
+        }
+
+        if (commandRouter == null)
+        {
+            commandRouter = FindAnyObjectByType<VoiceCommandRouter>();
         }
     }
 
-    private void Update()
+    private void OnEnable()
     {
-        while (pendingMessages.TryDequeue(out byte[] bytes))
-        {
-            HandleMessage(bytes);
-        }
+        SubscribeVoiceEvents(true);
     }
 
-    private async void OnApplicationQuit()
+    private void Start()
     {
-        await Disconnect();
-    }
-
-    public async System.Threading.Tasks.Task Connect()
-    {
-        if (websocket != null && websocket.State == WebSocketState.Open)
-        {
-            return;
-        }
-
-        string resolvedWebsocketUrl = ResolveWebsocketUrl();
-        websocket = new WebSocket(resolvedWebsocketUrl);
-        websocket.OnOpen += HandleOpen;
-        websocket.OnMessage += EnqueueMessage;
-        websocket.OnError += error => PublishStatus("WebSocket error: " + error);
-        websocket.OnClose += code => PublishStatus("WebSocket closed: " + code);
-
-        PublishStatus("Connecting to voice backend: " + resolvedWebsocketUrl);
-        await websocket.Connect();
-    }
-
-    private string ResolveWebsocketUrl()
-    {
-#if UNITY_ANDROID && !UNITY_EDITOR
-        if (!string.IsNullOrWhiteSpace(androidWebsocketUrl))
-        {
-            return androidWebsocketUrl;
-        }
-#endif
-
-        return websocketUrl;
-    }
-
-    public async System.Threading.Tasks.Task Disconnect()
-    {
-        StopMicrophoneStream();
-
-        if (websocket == null)
-        {
-            return;
-        }
-
-        await websocket.Close();
-        websocket = null;
-    }
-
-    public void StartMicrophoneStream()
-    {
-        if (microphoneStreaming)
-        {
-            return;
-        }
-
-        if (!IsConnected)
-        {
-            PublishStatus("Cannot start microphone: WebSocket is not connected.");
-            return;
-        }
-
-        activeMicrophoneDevice = SelectedMicrophoneDevice();
-
-        try
-        {
-            microphoneClip = Microphone.Start(activeMicrophoneDevice, true, recordingBufferSeconds, sampleRate);
-        }
-        catch (Exception exception)
-        {
-            PublishStatus("Cannot start microphone: " + exception.Message);
-            activeMicrophoneDevice = null;
-            return;
-        }
-
-        if (microphoneClip == null)
-        {
-            PublishStatus("Cannot start microphone: no recording device is available.");
-            activeMicrophoneDevice = null;
-            return;
-        }
-
-        lastSamplePosition = 0;
-        microphoneStreaming = true;
-        streamCoroutine = StartCoroutine(StreamMicrophone());
-        PublishStatus("Microphone streaming started.");
-    }
-
-    public async void StopMicrophoneStream()
-    {
-        if (!microphoneStreaming)
-        {
-            return;
-        }
-
-        microphoneStreaming = false;
-
-        if (streamCoroutine != null)
-        {
-            StopCoroutine(streamCoroutine);
-            streamCoroutine = null;
-        }
-
-        if (Microphone.IsRecording(activeMicrophoneDevice))
-        {
-            Microphone.End(activeMicrophoneDevice);
-        }
-
-        microphoneClip = null;
-        activeMicrophoneDevice = null;
-        await SendAudioStreamEnd();
-        PublishStatus("Microphone streaming stopped.");
-    }
-
-    private void HandleOpen()
-    {
-        PublishStatus("Voice backend connected.");
-
-        if (streamMicrophoneOnConnect)
+        if (listenOnStart)
         {
             StartMicrophoneStream();
         }
     }
 
-    private void EnqueueMessage(byte[] bytes, int offset, int length)
+    private void OnDisable()
     {
-        byte[] message = new byte[length];
-        Array.Copy(bytes, offset, message, 0, length);
-        pendingMessages.Enqueue(message);
+        shouldAutoRestart = false;
+        StopRestartCoroutine();
+        SubscribeVoiceEvents(false);
     }
 
-    private void HandleMessage(byte[] bytes)
+    private void OnApplicationQuit()
     {
-        string json = Encoding.UTF8.GetString(bytes);
+        StopMicrophoneStream();
+    }
 
-        Debug.Log($"RAW MESSAGE: [{json}]");
+    public System.Threading.Tasks.Task Connect()
+    {
+        ResolveDependencies();
+        PublishStatus(voiceService == null
+            ? "Meta Voice SDK AppVoiceExperience was not found."
+            : "Meta Voice SDK voice service is ready.");
+        return System.Threading.Tasks.Task.CompletedTask;
+    }
 
-        VoiceServerMessage message = JsonUtility.FromJson<VoiceServerMessage>(json);
+    public System.Threading.Tasks.Task Disconnect()
+    {
+        StopMicrophoneStream();
+        return System.Threading.Tasks.Task.CompletedTask;
+    }
 
-        if (message == null)
+    public void StartMicrophoneStream()
+    {
+        ResolveDependencies();
+
+        if (voiceService == null)
         {
-            Debug.LogError("Failed to parse message");
+            PublishStatus("Cannot start microphone: add an AppVoiceExperience to the scene or assign one here.");
             return;
         }
-        
-        switch (message.type)
-        {
-            case "ready":
-                PublishStatus("Gemini Live ready: " + message.model);
-                break;
-            case "input_transcript":
-                if (!string.IsNullOrWhiteSpace(message.text))
-                {
-                    onInputTranscript?.Invoke(message.text);
-                }
-                break;
-            case "output_transcript":
-                if (!string.IsNullOrWhiteSpace(message.text))
-                {
-                    onOutputTranscript?.Invoke(message.text);
-                }
-                break;
-            case "audio":
-                if (!string.IsNullOrWhiteSpace(message.data))
-                {
-                    onAudioReceived?.Invoke(Convert.FromBase64String(message.data));
-                }
-                break;
-            case "turn_complete":
-                PublishStatus("Voice turn complete.");
-                break;
-            case "interrupted":
-                PublishStatus("Voice response interrupted.");
-                break;
-            case "error":
-                PublishStatus("Voice backend error: " + message.message);
-                break;
-        }
-    }
 
-    private IEnumerator StreamMicrophone()
-    {
-        int chunkFrames = Mathf.Max(1, Mathf.RoundToInt(sampleRate * chunkSeconds));
-        var wait = new WaitForSeconds(chunkSeconds * 0.5f);
-
-        while (microphoneStreaming)
-        {
-            int currentPosition = Microphone.GetPosition(activeMicrophoneDevice);
-            if (currentPosition < 0 || microphoneClip == null)
-            {
-                PublishStatus("Microphone device changed or reset; stopping stream.");
-                StopMicrophoneStream();
-                yield break;
-            }
-
-            int availableFrames = GetAvailableFrames(currentPosition);
-            while (availableFrames >= chunkFrames)
-            {
-                float[] samples = ReadFrames(lastSamplePosition, chunkFrames);
-                byte[] pcm = ConvertTo16BitMonoPcm(samples, microphoneClip.channels);
-                SendAudioChunk(pcm);
-
-                lastSamplePosition = (lastSamplePosition + chunkFrames) % microphoneClip.samples;
-                availableFrames -= chunkFrames;
-            }
-
-            yield return wait;
-        }
-    }
-
-    private int GetAvailableFrames(int currentPosition)
-    {
-        if (currentPosition >= lastSamplePosition)
-        {
-            return currentPosition - lastSamplePosition;
-        }
-
-        return microphoneClip.samples - lastSamplePosition + currentPosition;
-    }
-
-    private float[] ReadFrames(int startFrame, int frameCount)
-    {
-        int channels = microphoneClip.channels;
-        int framesUntilWrap = microphoneClip.samples - startFrame;
-
-        if (frameCount <= framesUntilWrap)
-        {
-            float[] data = new float[frameCount * channels];
-            microphoneClip.GetData(data, startFrame);
-            return data;
-        }
-
-        int firstFrameCount = framesUntilWrap;
-        int secondFrameCount = frameCount - firstFrameCount;
-
-        float[] first = new float[firstFrameCount * channels];
-        float[] second = new float[secondFrameCount * channels];
-        microphoneClip.GetData(first, startFrame);
-        microphoneClip.GetData(second, 0);
-
-        float[] combined = new float[frameCount * channels];
-        Array.Copy(first, combined, first.Length);
-        Array.Copy(second, 0, combined, first.Length, second.Length);
-        return combined;
-    }
-
-    private byte[] ConvertTo16BitMonoPcm(float[] samples, int channels)
-    {
-        int frameCount = samples.Length / channels;
-        byte[] pcm = new byte[frameCount * 2];
-
-        for (int frame = 0; frame < frameCount; frame++)
-        {
-            float mono = 0f;
-            int offset = frame * channels;
-
-            for (int channel = 0; channel < channels; channel++)
-            {
-                mono += samples[offset + channel];
-            }
-
-            mono = Mathf.Clamp(mono / channels, -1f, 1f);
-            short value = (short)Mathf.RoundToInt(mono * short.MaxValue);
-            int byteIndex = frame * 2;
-            pcm[byteIndex] = (byte)(value & 0xff);
-            pcm[byteIndex + 1] = (byte)((value >> 8) & 0xff);
-        }
-
-        return pcm;
-    }
-
-    private async void SendAudioChunk(byte[] pcm)
-    {
-        if (!IsConnected)
+        if (voiceService.Active || voiceService.MicActive)
         {
             return;
         }
 
-        var message = new VoiceAudioMessage
+        if (!voiceService.CanActivateAudio())
         {
-            type = "audio",
-            data = Convert.ToBase64String(pcm),
-            mime_type = $"audio/pcm;rate={sampleRate}"
-        };
+            PublishStatus("Cannot start Meta Voice SDK microphone: " + voiceService.GetActivateAudioError());
+            return;
+        }
 
-        await websocket.SendText(JsonUtility.ToJson(message));
+        shouldAutoRestart = restartAfterUtterance;
+        if (activateImmediately)
+        {
+            voiceService.ActivateImmediately();
+        }
+        else
+        {
+            voiceService.Activate();
+        }
+
+        PublishStatus("Meta Voice SDK microphone listening started.");
     }
 
-    private async System.Threading.Tasks.Task SendAudioStreamEnd()
+    public void StopMicrophoneStream()
     {
-        if (!IsConnected)
+        shouldAutoRestart = false;
+        StopRestartCoroutine();
+
+        if (voiceService == null)
         {
             return;
         }
 
-        await websocket.SendText(JsonUtility.ToJson(new VoiceControlMessage { type = "audio_stream_end" }));
+        if (voiceService.Active || voiceService.MicActive)
+        {
+            voiceService.Deactivate();
+        }
+
+        PublishStatus("Meta Voice SDK microphone listening stopped.");
+    }
+
+    public void HandleTranscriptForTesting(string transcript)
+    {
+        HandleFullTranscription(transcript);
+    }
+
+    private void SubscribeVoiceEvents(bool subscribe)
+    {
+        if (voiceService == null)
+        {
+            return;
+        }
+
+        if (subscribe)
+        {
+            voiceService.VoiceEvents.OnMinimumWakeThresholdHit.AddListener(HandleVoiceDetected);
+            voiceService.VoiceEvents.OnPartialTranscription.AddListener(HandlePartialTranscription);
+            voiceService.VoiceEvents.OnFullTranscription.AddListener(HandleFullTranscription);
+            voiceService.VoiceEvents.OnStartListening.AddListener(HandleStartListening);
+            voiceService.VoiceEvents.OnStoppedListening.AddListener(HandleStoppedListening);
+            voiceService.VoiceEvents.OnError.AddListener(HandleVoiceError);
+        }
+        else
+        {
+            voiceService.VoiceEvents.OnMinimumWakeThresholdHit.RemoveListener(HandleVoiceDetected);
+            voiceService.VoiceEvents.OnPartialTranscription.RemoveListener(HandlePartialTranscription);
+            voiceService.VoiceEvents.OnFullTranscription.RemoveListener(HandleFullTranscription);
+            voiceService.VoiceEvents.OnStartListening.RemoveListener(HandleStartListening);
+            voiceService.VoiceEvents.OnStoppedListening.RemoveListener(HandleStoppedListening);
+            voiceService.VoiceEvents.OnError.RemoveListener(HandleVoiceError);
+        }
+    }
+
+    private void HandleStartListening()
+    {
+        voiceDetectedThisUtterance = false;
+        PublishStatus("Meta Voice SDK is listening.");
+    }
+
+    private void HandleStoppedListening()
+    {
+        PublishStatus("Meta Voice SDK stopped listening.");
+        if (logVoiceDetection && !voiceDetectedThisUtterance)
+        {
+            PublishStatus("No voice detected during that listening window.");
+        }
+
+        if (shouldAutoRestart && isActiveAndEnabled)
+        {
+            StopRestartCoroutine();
+            restartCoroutine = StartCoroutine(RestartListeningAfterDelay());
+        }
+    }
+
+    private IEnumerator RestartListeningAfterDelay()
+    {
+        yield return new WaitForSeconds(restartDelaySeconds);
+        restartCoroutine = null;
+
+        if (shouldAutoRestart && isActiveAndEnabled)
+        {
+            StartMicrophoneStream();
+        }
+    }
+
+    private void HandleVoiceError(string error, string message)
+    {
+        PublishStatus("Meta Voice SDK error: " + error + " " + message);
+    }
+
+    private void HandleVoiceDetected()
+    {
+        voiceDetectedThisUtterance = true;
+
+        if (logVoiceDetection)
+        {
+            PublishStatus("Voice/audio detected by Meta Voice SDK.");
+        }
+    }
+
+    private void HandlePartialTranscription(string transcript)
+    {
+        if (string.IsNullOrWhiteSpace(transcript))
+        {
+            return;
+        }
+
+        voiceDetectedThisUtterance = true;
+
+        if (logVoiceDetection)
+        {
+            PublishStatus("Partial voice detected: " + transcript.Trim());
+        }
+    }
+
+    private void HandleFullTranscription(string transcript)
+    {
+        if (string.IsNullOrWhiteSpace(transcript))
+        {
+            return;
+        }
+
+        voiceDetectedThisUtterance = true;
+        string trimmedTranscript = transcript.Trim();
+        PublishStatus("Voice recognized: " + trimmedTranscript);
+        onInputTranscript?.Invoke(trimmedTranscript);
+
+        HardCodedVoiceResponse response = FindResponse(trimmedTranscript);
+        if (response == null)
+        {
+            PublishStatus("No hard-coded LLM response matched: " + trimmedTranscript);
+            onOutputTranscript?.Invoke(unknownOutputText);
+            return;
+        }
+
+        string outputText = string.IsNullOrWhiteSpace(response.outputText)
+            ? response.commandTranscript
+            : response.outputText;
+        string commandTranscript = string.IsNullOrWhiteSpace(response.commandTranscript)
+            ? outputText
+            : response.commandTranscript;
+
+        PublishStatus("Hard-coded LLM response: " + outputText);
+        onOutputTranscript?.Invoke(outputText);
+        onCommandTranscript?.Invoke(commandTranscript);
+        commandRouter?.HandleTranscript(commandTranscript);
+    }
+
+    private HardCodedVoiceResponse FindResponse(string transcript)
+    {
+        string normalized = transcript.ToLowerInvariant();
+        foreach (HardCodedVoiceResponse response in responses)
+        {
+            if (response == null || response.keywords == null)
+            {
+                continue;
+            }
+
+            foreach (string keyword in response.keywords)
+            {
+                if (!string.IsNullOrWhiteSpace(keyword) && normalized.Contains(keyword.ToLowerInvariant()))
+                {
+                    return response;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private void ResolveDependencies()
+    {
+        if (voiceService == null)
+        {
+            voiceService = FindAnyObjectByType<AppVoiceExperience>();
+            SubscribeVoiceEvents(true);
+        }
+
+        if (commandRouter == null)
+        {
+            commandRouter = FindAnyObjectByType<VoiceCommandRouter>();
+        }
+    }
+
+    private void StopRestartCoroutine()
+    {
+        if (restartCoroutine == null)
+        {
+            return;
+        }
+
+        StopCoroutine(restartCoroutine);
+        restartCoroutine = null;
     }
 
     private void PublishStatus(string message)
@@ -355,49 +391,14 @@ public sealed class VoiceRecognitionClient : MonoBehaviour
         Debug.Log("[VoiceRecognitionClient] " + message);
         onStatusChanged?.Invoke(message);
     }
+}
 
-    private string SelectedMicrophoneDevice()
-    {
-        if (string.IsNullOrWhiteSpace(microphoneDevice))
-        {
-            return null;
-        }
-
-        foreach (string device in Microphone.devices)
-        {
-            if (string.Equals(device, microphoneDevice, StringComparison.Ordinal))
-            {
-                return microphoneDevice;
-            }
-        }
-
-        PublishStatus("Configured microphone not found, using system default: " + microphoneDevice);
-        return null;
-    }
-
-    [Serializable]
-    private sealed class VoiceServerMessage
-    {
-        public string type;
-        public string text;
-        public string data;
-        public string message;
-        public string model;
-    }
-
-    [Serializable]
-    private sealed class VoiceAudioMessage
-    {
-        public string type;
-        public string data;
-        public string mime_type;
-    }
-
-    [Serializable]
-    private sealed class VoiceControlMessage
-    {
-        public string type;
-    }
+[Serializable]
+public sealed class HardCodedVoiceResponse
+{
+    public string[] keywords;
+    public string outputText;
+    public string commandTranscript;
 }
 
 [Serializable]

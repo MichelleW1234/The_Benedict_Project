@@ -8,7 +8,7 @@ using UnityEngine.Networking;
 public sealed class VoiceCommandRouter : MonoBehaviour
 {
     [Header("NLP Intent Classification")]
-    [SerializeField] private bool useNlpClassification = true;
+    [SerializeField] private bool useNlpClassification = false;
     [SerializeField] private string intentApiUrl = "http://127.0.0.1:3000/api/intent";
     [SerializeField] private string androidIntentApiUrl;
     [SerializeField] private bool fallbackToLocalPhrases = true;
@@ -45,6 +45,8 @@ public sealed class VoiceCommandRouter : MonoBehaviour
         {
             return;
         }
+
+        Debug.Log("[VoiceCommandRouter] Processing voice command: " + transcript.Trim());
 
         if (useNlpClassification)
         {
