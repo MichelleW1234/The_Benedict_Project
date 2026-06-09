@@ -297,7 +297,7 @@ public class STT : MonoBehaviour
             }
         }
 
-        if (lower.Contains("sad"))
+        if (lower.Contains("sad")|| lower.Contains("broke up") || lower.Contains("rejected") || lower.Contains("depressed") || lower.Contains("miserable"))
         {
             Debug.Log("[STT] Sad command detected.");
 
@@ -311,7 +311,7 @@ public class STT : MonoBehaviour
             }
         }
 
-        if (lower.Contains("clap") || lower.Contains("congratulate") || lower.Contains("accepted"))
+        if (lower.Contains("clap") || lower.Contains("congratulat") || lower.Contains("accepted") || lower.Contains("graduat"))
         {
             Debug.Log("[STT] Clap command detected.");
 
