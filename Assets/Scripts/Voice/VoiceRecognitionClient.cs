@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using Oculus.Voice;
 using UnityEngine;
+using TMPro;
 using UnityEngine.Events;
 
 public sealed class VoiceRecognitionClient : MonoBehaviour
@@ -11,8 +12,9 @@ public sealed class VoiceRecognitionClient : MonoBehaviour
     [SerializeField] private bool listenOnStart = true;
     [SerializeField] private bool activateImmediately = false;
     [SerializeField] private bool restartAfterUtterance = true;
-    [SerializeField] private float restartDelaySeconds = 0.25f;
+    [SerializeField] private float restartDelaySeconds = 1.0f;
     [SerializeField] private bool logVoiceDetection = true;
+
 
     [Header("Hard-Coded LLM")]
     [SerializeField] private VoiceCommandRouter commandRouter;
@@ -113,6 +115,8 @@ public sealed class VoiceRecognitionClient : MonoBehaviour
 
     private void OnEnable()
     {
+        ResolveDependencies();
+        SubscribeVoiceEvents(false);
         SubscribeVoiceEvents(true);
     }
 
@@ -165,16 +169,25 @@ public sealed class VoiceRecognitionClient : MonoBehaviour
         }
         ResolveDependencies();
 
+        Debug.Log("[VoiceRecognitionClient] Command Router found: " + (commandRouter != null));
+
         if (voiceService == null)
         {
             PublishStatus("Cannot start microphone: add an AppVoiceExperience to the scene or assign one here.");
             return;
         }
 
-        if (voiceService.Active || voiceService.MicActive)
-        {
-            return;
-        }
+        if (voiceService.MicActive)
+    {
+        Debug.Log("[VoiceRecognitionClient] Already mic active, not restarting.");
+        return;
+    }
+
+    if (voiceService.Active && !voiceService.MicActive)
+    {
+        Debug.LogWarning("[VoiceRecognitionClient] Voice service is Active but MicActive is false. Deactivating before restart.");
+        voiceService.Deactivate();
+    }
 
         if (!voiceService.CanActivateAudio())
         {
@@ -192,9 +205,19 @@ public sealed class VoiceRecognitionClient : MonoBehaviour
             voiceService.Activate();
         }
 
+        StartCoroutine(CheckMicAfterActivate());
+
 
         //on success
         PublishStatus("Meta Voice SDK microphone listening started.");
+    }
+
+    private IEnumerator CheckMicAfterActivate()
+    {
+        yield return new WaitForSeconds(0.5f);
+
+        Debug.Log("[VoiceRecognitionClient] AFTER ACTIVATE Active: " + voiceService.Active);
+        Debug.Log("[VoiceRecognitionClient] AFTER ACTIVATE MicActive: " + voiceService.MicActive);
     }
 
     public void StopMicrophoneStream()
@@ -272,6 +295,13 @@ public sealed class VoiceRecognitionClient : MonoBehaviour
     {
         yield return new WaitForSeconds(restartDelaySeconds);
         restartCoroutine = null;
+
+        if (voiceService != null && voiceService.Active && !voiceService.MicActive)
+        {
+            Debug.LogWarning("[VoiceRecognitionClient] Restart cleanup: deactivating stuck Active state.");
+            voiceService.Deactivate();
+            yield return new WaitForSeconds(0.5f);
+        }
 
         if (shouldAutoRestart && isActiveAndEnabled)
         {

@@ -1,6 +1,6 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!114 &-7700416992368590091
+--- !u!114 &-3641148012941756014
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -23,7 +23,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ae5a46bda3295124c99b0e6537ac7252, type: 3}
-  m_Name: createVoice
+  m_Name: wit
   m_EditorClassIdentifier: 
   _clientAccessToken: GCNQ3X6IIM42AN3RDLLFAKAE7X7C23EP
   editorVersionTag: 
@@ -35,11 +35,37 @@ MonoBehaviour:
     isPrivate: 1
     createdAt: 2026-06-07T21:29:03-0700
     trainingStatus: 1
-    lastTrainDuration: 0
-    lastTrainedAt: 1969-12-31T16:00:00-0800
-    nextTrainAt: 1969-12-31T16:00:00-0800
-    intents: []
-    entities: []
+    lastTrainDuration: 144
+    lastTrainedAt: 2026-06-08T21:41:36-0700
+    nextTrainAt: 2026-06-08T21:39:12-0700
+    intents:
+    - id: 989574860501377
+      name: give_flower
+      entities: []
+    - id: 1018681157347322
+      name: happy
+      entities: []
+    - id: 1294037026105573
+      name: wake_word
+      entities:
+      - name: wake_word:wake_word
+        id: 2761886237510226
+    entities:
+    - name: wake_word
+      id: 27221179544181675
+      lookups:
+      - free-text
+      - keywords
+      roles:
+      - name: wake_word
+        id: 2761886237510226
+      keywords:
+      - keyword: Hey Quest
+        synonyms:
+        - ey est
+        - ey quest
+        - hey est
+        - hey quest
     traits: []
     versionTags: []
     voices:
@@ -549,8 +575,8 @@ MonoBehaviour:
       - phoneme_events
       - word_events
   _configData:
-  - {fileID: -7700416992368590091}
-  _configurationId: c029203a-3d03-4822-badf-1a136f0f1c60
+  - {fileID: -3641148012941756014}
+  _configurationId: c456bd30-395a-4554-88a0-0a802fc859c1
   _requestType: 0
   _requestTimeoutMs: 10000
   endpointConfiguration:
@@ -567,7 +593,7 @@ MonoBehaviour:
   isDemoOnly: 0
   useIntentAttributes: 1
   useConduit: 1
-  _manifestLocalPath: ConduitManifest-80a61036-0b0e-485a-b1d8-1ff638d24cac.json
+  _manifestLocalPath: ConduitManifest-f9ad34ed-c8cb-481c-b88a-210723130873.json
   excludedAssemblies:
   - Oculus.Voice.Demo, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
   - Meta.WitAi.Samples, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
